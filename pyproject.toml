@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uppasd_sweeper"
+version = "1.0"
+description = "Temperature sweep wrapperfor UppASD simulations"
+readme = "README.md"
+authors = [ { name = "Anders Bergman" } ]
+license = { text = "MIT" }
+classifiers = [
+	"Programming Language :: Python :: 3",
+	"License :: OSI Approved :: MIT License",
+]
+dependencies = ["numpy"]
+
+[project.urls]
+Homepage = "https://github.com/anbergman/uppasd_sweeper"
+
+[project.scripts]
+t_sweeper = "t_sweeper:main"
+t_summarize = "t_summarize:main"
+
+[tool.setuptools]
+py-modules = ["t_sweeper", "t_summarize"]
