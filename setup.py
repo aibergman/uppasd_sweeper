@@ -3,11 +3,12 @@ from setuptools import setup
 setup(
     name='uppasd_sweeper',
     version='1.0',
-    py_modules=['t_sweeper'],
+    py_modules=['t_sweeper', 't_summarize'],
     install_requires=['numpy'],
     entry_points={
         'console_scripts': [
             't_sweeper=t_sweeper:main',
+            't_summarize=t_summarize:main',
         ],
     },
     author='Anders Bergman',
