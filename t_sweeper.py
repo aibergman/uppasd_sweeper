@@ -48,12 +48,58 @@ def replace_temperature_strings(folder_path, temperature):
         if path.is_file() and path.suffix not in [".exe", ".bin"]:  # Skip binary files
             try:
                 text = path.read_text()
-                new_text = text.replace("TEMP", f"{int(round(temperature))}")
+                # If temperature is exactly zero, use a small positive value to avoid T=0.
+                t_replace = temperature if abs(temperature) > 1e-12 else (temperature + 1.0)
+                # t_replace = temperature if abs(temperature) > 1e-12 else (temperature + 1e-3)
+                # Format replacement: use integer style when close to integer, else 8 decimals
+                if abs(t_replace - round(t_replace)) < 1e-8:
+                    rep = str(int(round(t_replace)))
+                else:
+                    rep = f"{t_replace:.8f}"
+
+                new_text = text.replace("TEMP", rep)
                 if new_text != text:
                     path.write_text(new_text)
             except UnicodeDecodeError:
                 # Skip non-text files
                 continue
+
+
+def ensure_inpsd_lines(folder_path):
+    """
+    Ensure `inpsd.dat` contains required directives.
+
+    Adds the lines `plotenergy 1` and `do_cumu Y` to the
+    `inpsd.dat` file in `folder_path` if they are not already present.
+
+    Args:
+        folder_path (Path): Directory containing `inpsd.dat`.
+    """
+    inpsd_path = Path(folder_path) / "inpsd.dat"
+    required = ["plotenergy 1", "do_cumu Y"]
+
+    # If file doesn't exist, create it with the required lines
+    if not inpsd_path.exists():
+        inpsd_path.write_text("\n".join(required) + "\n", encoding="utf-8")
+        return
+
+    try:
+        text = inpsd_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        # If file is binary or can't be read as text, skip modification
+        return
+
+    lines = [ln.strip() for ln in text.splitlines()]
+    to_add = []
+    for req in required:
+        kw = req.split()[0]
+        if not any(l.startswith(kw) for l in lines):
+            to_add.append(req)
+
+    if to_add:
+        # Append missing directives with a trailing newline
+        new_text = text.rstrip() + "\n" + "\n".join(to_add) + "\n"
+        inpsd_path.write_text(new_text, encoding="utf-8")
 
 
 def run_simulation(t, base, binary_path):
@@ -83,6 +129,9 @@ def run_simulation(t, base, binary_path):
 
     # Replace TEMP with temperature
     replace_temperature_strings(folder_path, t)
+
+    # Ensure inpsd.dat contains required directives
+    ensure_inpsd_lines(folder_path)
 
     # Run binary in the new folder
     with open(folder_path / "out.log", "w", encoding="utf-8") as out_log:
